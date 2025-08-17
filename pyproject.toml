@@ -6,6 +6,17 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "chromadb>=1.0.17",
+    "langchain>=0.3.27",
+    "langchain-community>=0.3.27",
+    "langchain-huggingface>=0.3.1",
+    "langchain-ollama>=0.3.6",
+    "langchain-qdrant>=0.2.0",
     "ollama>=0.5.3",
+    "qdrant-client>=1.15.1",
+    "sentence-transformers>=5.1.0",
     "streamlit>=1.48.1",
 ]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude =["test*"]
