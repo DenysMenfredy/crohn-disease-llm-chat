@@ -13,28 +13,57 @@ st.title("💬 Crohn Helper AI Agent")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- Display chat history ---
-for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).write(msg["content"])
+# Function to display a message card (ChatGPT-style)
+def display_message(role, content):
+    if role == "user":
+        bg_color = "#DCF8C6"
+        icon = "🧑"
+    else:
+        bg_color = "#F1F0F0"
+        icon = "🤖"
+
+    html = f"""
+    <div style="
+        background-color:{bg_color};
+        color:#000000;
+        padding:12px 16px;
+        border-radius:12px;
+        margin:6px 0px;
+        font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size:15px;
+        line-height:1.4;
+        box-shadow:0px 1px 3px rgba(0,0,0,0.1);
+        max-width:80%;
+        white-space:pre-wrap;
+    ">
+        <span style="margin-right:6px; font-size:18px;">{icon}</span>{content}
+    </div>
+    """
+    container = st.empty()
+    container.markdown(html, unsafe_allow_html=True)
+    return container
+
+# --- Render existing messages only once ---
+for i, msg in enumerate(st.session_state.messages):
+    if "container" not in msg:
+        container = display_message(msg["role"], msg["content"])
+        st.session_state.messages[i]["container"] = container
 
 # --- Chat input ---
 if prompt := st.chat_input("Ask me anything about Crohn's disease..."):
-    # User message
-    st.chat_message("user").write(prompt)
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    # Display user message immediately
+    user_container = display_message("user", prompt)
+    st.session_state.messages.append({"role": "user", "content": prompt, "container": user_container})
 
+    # Prepare assistant placeholder
+    assistant_placeholder = st.empty()
+    st.session_state.messages.append({"role": "assistant", "content": "", "container": assistant_placeholder})
 
-    # Assistant streaming response (simulate chunking)
-    response_container = st.chat_message("assistant")
-    placeholder = response_container.empty()
-
-    #Spinner while LLM is thinking
+    # Stream assistant response
     with st.spinner("Assistant is typing..."):
-        # Attach streaming handler
-        handler = StreamHandler(placeholder)
+        handler = StreamHandler(
+            messages_list=[st.session_state.messages[-1]],
+            placeholder=assistant_placeholder
+        )
         qa = build_rag_pipeline(callbacks=[handler])
-        result = qa.invoke(prompt)
-    
-    # Finalize assistant message
-    final_text = handler.text.strip()
-    st.session_state.messages.append({"role": "assistant", "content": final_text})
+        qa.invoke(prompt)
